@@ -15,7 +15,6 @@ import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
 import java.util.*
-import javax.net.ssl.HttpsURLConnection
 
 class WebSocketHubConnection(private val hubUrl: String) : HubConnection {
     companion object {
@@ -27,25 +26,25 @@ class WebSocketHubConnection(private val hubUrl: String) : HubConnection {
     private val listeners = mutableListOf<HubConnectionListener>()
     private val eventListeners = mutableMapOf<String, MutableList<HubEventListener>>()
     private val parsedUri = Uri.parse(hubUrl)
+    private val gson = Gson()
 
     override fun connect(authHeader: String?) {
         Log.i(TAG, "Requesting connection id...")
-        val connection: HttpURLConnection = when {
-            parsedUri.scheme == "http" -> URL(hubUrl).openConnection() as HttpURLConnection
-            parsedUri.scheme == "https" -> URL(hubUrl).openConnection() as HttpsURLConnection
-            else -> throw RuntimeException("URL must start with http or https")
-        }
+        if (!(parsedUri.scheme == "http" || parsedUri.scheme == "https"))
+            throw RuntimeException("URL must start with http or https")
+
+        val connection: HttpURLConnection = URL(hubUrl).openConnection() as HttpURLConnection
         if (authHeader != null) {
             connection.addRequestProperty("Authorization", authHeader)
         }
         connection.connectTimeout = 15000
-        connection.connectTimeout = 15000
+        connection.readTimeout = 15000
         connection.requestMethod = "OPTIONS"
         val responseCode = connection.responseCode
         when (responseCode) {
             200 -> {
                 val result = InputStreamConverter.convert(connection.inputStream)
-                val jsonElement = Gson().fromJson<JsonElement>(result, JsonElement::class.java)
+                val jsonElement = gson.fromJson<JsonElement>(result, JsonElement::class.java)
                 val connectionId = jsonElement.asJsonObject.get("connectionId").asString
                 if (!jsonElement.asJsonObject.get("availableTransports").asJsonArray.toList().map { it.asString }.contains("WebSockets")) {
                     throw RuntimeException("The server does not support WebSockets transport")
@@ -60,7 +59,7 @@ class WebSocketHubConnection(private val hubUrl: String) : HubConnection {
     private fun connectClient(connectionId: String?, authHeader: String?) {
         val uriBuilder = parsedUri.buildUpon()
         uriBuilder.appendQueryParameter("id", connectionId)
-        uriBuilder.scheme(if (parsedUri.scheme == "http") "ws" else "wss")
+        uriBuilder.scheme(parsedUri.scheme.replace("http", "ws"))
         val uri = uriBuilder.build()
         val headers = if (authHeader == null) null else mapOf("Authorization" to authHeader)
         client = object : WebSocketClient(URI(uri.toString()), Draft_6455(), headers, 15000) {
@@ -72,7 +71,7 @@ class WebSocketHubConnection(private val hubUrl: String) : HubConnection {
 
             override fun onMessage(s: String) {
                 Log.i(TAG, s)
-                val element = Gson().fromJson<SignalRMessage>(s.replace(SPECIAL_SYMBOL, ""), SignalRMessage::class.java)
+                val element = gson.fromJson<SignalRMessage>(s.replace(SPECIAL_SYMBOL, ""), SignalRMessage::class.java)
                 if (element.type == 1) {
                     val message = HubMessage(element.invocationId!!, element.target!!, element.arguments!!)
                     listeners.forEach { it.onMessage(message) }
@@ -81,7 +80,7 @@ class WebSocketHubConnection(private val hubUrl: String) : HubConnection {
             }
 
             override fun onClose(i: Int, s: String, b: Boolean) {
-                Log.i(TAG, "Closed. Code: $i, $s, $b")
+                Log.i(TAG, "Closed. Code: $i, Reason: $s, Remote: $b")
                 listeners.forEach { it.onDisconnected() }
             }
 
@@ -121,7 +120,7 @@ class WebSocketHubConnection(private val hubUrl: String) : HubConnection {
 
     override fun invoke(event: String, vararg parameters: Any) {
         val map = mapOf("type" to 1, "invocationId" to UUID.randomUUID().toString(), "target" to event, "arguments" to parameters, "nonblocking" to false)
-        client.send(Gson().toJson(map) + SPECIAL_SYMBOL)
+        client.send(gson.toJson(map) + SPECIAL_SYMBOL)
     }
 
     override fun addListener(listener: HubConnectionListener) {

@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.widget.Toast
 import com.google.gson.Gson
-import com.smartarmenia.dotnetcoresignalrclient.*
+import com.smartarmenia.dotnetcoresignalrclientjava.*
 import kotlinx.android.synthetic.main.activity_main.*
 
 
@@ -29,7 +29,7 @@ class MainActivity : AppCompatActivity(), HubConnectionListener, HubEventListene
 
     }
 
-    private val connection: HubConnection = WebSocketHubConnection("http://192.168.0.109:5002/signalr/hubs/auth")
+    private val connection: HubConnection = WebSocketHubConnection("http://192.168.0.104:5002/signalr/hubs/auth")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

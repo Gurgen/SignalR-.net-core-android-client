@@ -1,1 +1,1 @@
-include ':app', ':dotnetcoresignalrclient'
+include ':app', ':dotnetcoresignalrclient', ':dotnetcoresignalrclientjava'
