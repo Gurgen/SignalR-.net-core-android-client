@@ -1,2 +1,2 @@
 # SignalR-.net-core-android-client
-Kotlin version
+Kotlin and java versions
