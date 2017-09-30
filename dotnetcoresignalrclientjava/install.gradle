@@ -1,0 +1,43 @@
+apply plugin: 'com.github.dcendents.android-maven'
+
+group = 'com.smartarmenia'
+
+install {
+    repositories.mavenInstaller {
+        pom {
+            project {
+                packaging 'aar'
+                groupId 'com.smartarmenia'
+                artifactId 'dotnetcoresignalrclientjava'
+
+                name 'SignalRNetCoreAndroidClient'
+                description 'Android client for .net core SignalR'
+                url 'https://github.com/Gurgen/SignalR-.net-core-android-client'
+
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id 'gurgen'
+                        name 'Gurgen Hakobyan'
+                        email 'hakobyan.gurgen@gmail.com'
+                    }
+                }
+                scm {
+                    connection 'https://github.com/Gurgen/SignalR-.net-core-android-client.git'
+                    developerConnection 'https://github.com/Gurgen/SignalR-.net-core-android-client.git'
+                    url 'https://github.com/Gurgen/SignalR-.net-core-android-client'
+
+                }
+                dependencies {
+                    compile 'org.java-websocket:Java-WebSocket:1.3.4'
+                    compile 'com.google.code.gson:gson:2.8.1'
+                }
+            }
+        }
+    }
+}
