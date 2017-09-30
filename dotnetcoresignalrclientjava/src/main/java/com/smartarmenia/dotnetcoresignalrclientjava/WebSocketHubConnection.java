@@ -35,22 +35,38 @@ public class WebSocketHubConnection implements HubConnection {
     private String hubUrl;
     private Gson gson = new Gson();
 
-    public WebSocketHubConnection(String hubUrl) {
+    private String connectionId = null;
+    private String authHeader = null;
+
+    public WebSocketHubConnection(String hubUrl, String authHeader) {
         this.hubUrl = hubUrl;
+        this.authHeader = authHeader;
         parsedUri = Uri.parse(hubUrl);
     }
 
     @Override
-    public void connect(final String authHeader) {
-        Runnable runnable = new Runnable() {
-            public void run() {
-                getConnectionId(authHeader);
-            }
-        };
+    public synchronized void connect() {
+        if (client != null && (client.isOpen() || client.isConnecting()))
+            return;
+
+        Runnable runnable;
+        if (connectionId == null) {
+            runnable = new Runnable() {
+                public void run() {
+                    getConnectionId();
+                }
+            };
+        } else {
+            runnable = new Runnable() {
+                public void run() {
+                    connectClient();
+                }
+            };
+        }
         new Thread(runnable).start();
     }
 
-    private void getConnectionId(String authHeader) {
+    private void getConnectionId() {
         Log.i(TAG, "Requesting connection id...");
         if (!(parsedUri.getScheme().equals("http") || parsedUri.getScheme().equals("https")))
             throw new RuntimeException("URL must start with http or https");
@@ -75,18 +91,23 @@ public class WebSocketHubConnection implements HubConnection {
                 if (!availableTransports.contains("WebSockets")) {
                     throw new RuntimeException("The server does not support WebSockets transport");
                 }
-                connectClient(connectionId, authHeader);
+                this.connectionId = connectionId;
+                connectClient();
             } else if (responseCode == 401) {
-                throw new RuntimeException("Unauthorized request");
+                RuntimeException runtimeException = new RuntimeException("Unauthorized request");
+                error(runtimeException);
+                throw runtimeException;
             } else {
-                throw new RuntimeException("Server error");
+                RuntimeException runtimeException = new RuntimeException("Server error");
+                error(runtimeException);
+                throw runtimeException;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void connectClient(String connectionId, String authHeader) throws Exception {
+    private void connectClient() {
         Uri.Builder uriBuilder = parsedUri.buildUpon();
         uriBuilder.appendQueryParameter("id", connectionId);
         uriBuilder.scheme(parsedUri.getScheme().replace("http", "ws"));
@@ -95,49 +116,55 @@ public class WebSocketHubConnection implements HubConnection {
         if (authHeader != null && !authHeader.isEmpty()) {
             headers.put("Authorization", authHeader);
         }
-        client = new WebSocketClient(new URI(uri.toString()), new Draft_6455(), headers, 15000) {
-            @Override
-            public void onOpen(ServerHandshake handshakedata) {
-                Log.i(TAG, "Opened");
-                for (HubConnectionListener listener : listeners) {
-                    listener.onConnected();
-                }
-                send("{\"protocol\":\"json\"}" + SPECIAL_SYMBOL);
-            }
-
-            @Override
-            public void onMessage(String message) {
-                Log.i(TAG, message);
-                SignalRMessage element = gson.fromJson(message.replace(SPECIAL_SYMBOL, ""), SignalRMessage.class);
-                if (element.getType() == 1) {
-                    HubMessage hubMessage = new HubMessage(element.getInvocationId(), element.getTarget(), element.getArguments());
+        try {
+            client = new WebSocketClient(new URI(uri.toString()), new Draft_6455(), headers, 15000) {
+                @Override
+                public void onOpen(ServerHandshake handshakedata) {
+                    Log.i(TAG, "Opened");
                     for (HubConnectionListener listener : listeners) {
-                        listener.onMessage(hubMessage);
+                        listener.onConnected();
                     }
+                    send("{\"protocol\":\"json\"}" + SPECIAL_SYMBOL);
+                }
 
-                    List<HubEventListener> hubEventListeners = eventListeners.get(hubMessage.getTarget());
-                    if (hubEventListeners != null) {
-                        for (HubEventListener listener : hubEventListeners) {
-                            listener.onEventMessage(hubMessage);
+                @Override
+                public void onMessage(String message) {
+                    Log.i(TAG, message);
+                    SignalRMessage element = gson.fromJson(message.replace(SPECIAL_SYMBOL, ""), SignalRMessage.class);
+                    if (element.getType() == 1) {
+                        HubMessage hubMessage = new HubMessage(element.getInvocationId(), element.getTarget(), element.getArguments());
+                        for (HubConnectionListener listener : listeners) {
+                            listener.onMessage(hubMessage);
+                        }
+
+                        List<HubEventListener> hubEventListeners = eventListeners.get(hubMessage.getTarget());
+                        if (hubEventListeners != null) {
+                            for (HubEventListener listener : hubEventListeners) {
+                                listener.onEventMessage(hubMessage);
+                            }
                         }
                     }
                 }
-            }
 
-            @Override
-            public void onClose(int code, String reason, boolean remote) {
-                Log.i(TAG, String.format("Closed. Code: %s, Reason: %s, Remote: %s", code, reason, remote));
-                for (HubConnectionListener listener : listeners) {
-                    listener.onDisconnected();
+                @Override
+                public void onClose(int code, String reason, boolean remote) {
+                    Log.i(TAG, String.format("Closed. Code: %s, Reason: %s, Remote: %s", code, reason, remote));
+                    for (HubConnectionListener listener : listeners) {
+                        listener.onDisconnected();
+                    }
+                    connectionId = null;
                 }
-            }
 
-            @Override
-            public void onError(Exception ex) {
-                Log.i(TAG, "Error " + ex.getMessage());
-                error(ex);
-            }
-        };
+                @Override
+                public void onError(Exception ex) {
+                    Log.i(TAG, "Error " + ex.getMessage());
+                    error(ex);
+                }
+            };
+        } catch (Exception e) {
+            error(e);
+        }
+
         Log.i(TAG, "Connecting...");
         client.connect();
     }

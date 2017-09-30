@@ -1,7 +1,7 @@
 package com.smartarmenia.dotnetcoresignalrclientjava;
 
 public interface HubConnection {
-    void connect(String authHeader);
+    void connect();
 
     void disconnect();
 
