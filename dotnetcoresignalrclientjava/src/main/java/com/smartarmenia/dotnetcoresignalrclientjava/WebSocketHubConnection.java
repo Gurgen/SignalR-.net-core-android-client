@@ -41,7 +41,16 @@ public class WebSocketHubConnection implements HubConnection {
     }
 
     @Override
-    public void connect(String authHeader) {
+    public void connect(final String authHeader) {
+        Runnable runnable = new Runnable() {
+            public void run() {
+                getConnectionId(authHeader);
+            }
+        };
+        new Thread(runnable).start();
+    }
+
+    private void getConnectionId(String authHeader) {
         Log.i(TAG, "Requesting connection id...");
         if (!(parsedUri.getScheme().equals("http") || parsedUri.getScheme().equals("https")))
             throw new RuntimeException("URL must start with http or https");
@@ -126,18 +135,28 @@ public class WebSocketHubConnection implements HubConnection {
             @Override
             public void onError(Exception ex) {
                 Log.i(TAG, "Error " + ex.getMessage());
-                for (HubConnectionListener listener : listeners) {
-                    listener.onError(ex);
-                }
+                error(ex);
             }
         };
         Log.i(TAG, "Connecting...");
         client.connect();
     }
 
+    private void error(Exception ex) {
+        for (HubConnectionListener listener : listeners) {
+            listener.onError(ex);
+        }
+    }
+
     @Override
     public void disconnect() {
-        client.close();
+        Runnable runnable = new Runnable() {
+            public void run() {
+                if (client != null && !(client.isClosed() || client.isClosing()))
+                    client.close();
+            }
+        };
+        new Thread(runnable).start();
     }
 
     @Override
@@ -175,13 +194,25 @@ public class WebSocketHubConnection implements HubConnection {
 
     @Override
     public void invoke(String event, Object... parameters) {
-        Map<String, Object> map = new HashMap<>();
+        if (client == null || !client.isOpen()) {
+            throw new RuntimeException("Not connected");
+        }
+        final Map<String, Object> map = new HashMap<>();
         map.put("type", 1);
         map.put("invocationId", UUID.randomUUID());
         map.put("target", event);
         map.put("arguments", parameters);
         map.put("nonblocking", false);
-        client.send(gson.toJson(map) + SPECIAL_SYMBOL);
+        Runnable runnable = new Runnable() {
+            public void run() {
+                try {
+                    client.send(gson.toJson(map) + SPECIAL_SYMBOL);
+                } catch (Exception e) {
+                    error(e);
+                }
+            }
+        };
+        new Thread(runnable).start();
     }
 
     private static class InputStreamConverter {
