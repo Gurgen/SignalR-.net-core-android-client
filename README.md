@@ -14,11 +14,11 @@ Working .net core SignalR server.
 ### Installing
 
 ```
-implementation 'com.smartarmenia:dotnetcoresignalrclientjava:1.0.6'
+implementation 'com.smartarmenia:dotnetcoresignalrclientjava:1.0.7'
 ```
 or (for Android Studio 2.x)
 ```
-compile 'com.smartarmenia:dotnetcoresignalrclientjava:1.0.6'
+compile 'com.smartarmenia:dotnetcoresignalrclientjava:1.0.7'
 ```
 
 #### Kotlin example
@@ -27,47 +27,31 @@ private val connection: HubConnection = WebSocketHubConnection("http(https)://hu
 ```
 
 ```
-Thread(Runnable {
-            try {
-                connection.connect("Bearer your_token")
-            } catch (ex: Exception) {
-                runOnUiThread { Toast.makeText(this@MainActivity, ex.message, Toast.LENGTH_SHORT).show() }
-            }
-            connection.addListener(this@MainActivity)
-            connection.subscribeToEvent("Send", this)
-        }).start()
+connection.connect("Bearer your_token")
+connection.addListener(listener)
+connection.subscribeToEvent(event, listener)
 ```
 
 Invoke method
 
 ```
-btnHello.setOnClickListener {
-            connection.invoke("Send", "Hello")
-        }
+connection.invoke("Method", params...)
 ```
 
 #### Java example
 
 ```
-final HubConnection connection = new WebSocketHubConnection("http://192.168.0.104:5002/signalr/hubs/auth");
+final HubConnection connection = new WebSocketHubConnection("http(https)://hubaddress/");
 ```
 
 ```
-new Thread(new Runnable() {
-            @Override
-            public void run() {
-                connection.connect("Bearer your_token");
-            }
-        }).start();
+connection.connect("Bearer your_token");
+connection.addListener(listener);
+connection.subscribeToEvent(event, listener);
 ```
 
 Invoke method
 
 ```
-btnHello.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                connection.invoke("Send", "Hello");
-            }
-        });
+connection.invoke("Method", params...);
 ```
