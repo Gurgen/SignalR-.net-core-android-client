@@ -23,11 +23,11 @@ compile 'com.smartarmenia:dotnetcoresignalrclientjava:1.07'
 
 #### Kotlin example
 ```
-private val connection: HubConnection = WebSocketHubConnection("http(https)://hubaddress/")
+private val connection: HubConnection = WebSocketHubConnection("http(https)://hubaddress/", "Bearer your_token")
 ```
 
 ```
-connection.connect("Bearer your_token")
+connection.connect()
 connection.addListener(listener)
 connection.subscribeToEvent(event, listener)
 ```
@@ -41,11 +41,11 @@ connection.invoke("Method", params...)
 #### Java example
 
 ```
-final HubConnection connection = new WebSocketHubConnection("http(https)://hubaddress/");
+final HubConnection connection = new WebSocketHubConnection("http(https)://hubaddress/", "Bearer your_token");
 ```
 
 ```
-connection.connect("Bearer your_token");
+connection.connect();
 connection.addListener(listener);
 connection.subscribeToEvent(event, listener);
 ```
