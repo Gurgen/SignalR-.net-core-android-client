@@ -55,3 +55,7 @@ Invoke method
 ```
 connection.invoke("Method", params...);
 ```
+
+### Help
+
+If you get Multidex... error on compile, clean and rebuild project
