@@ -29,11 +29,45 @@ private val connection: HubConnection = WebSocketHubConnection("http(https)://hu
 ```
 Thread(Runnable {
             try {
-                connection.connect("Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6Ijc5NzhjMjI3LWViMGItNGMwOS1iYWEyLTEwYmE0MjI4YWE4OSIsImNlcnRzZXJpYWxudW1iZXIiOiJtYWNfYWRkcmVzc19vZl9waG9uZSIsInNlY3VyaXR5U3RhbXAiOiJlMTAxOWNiYy1jMjM2LTQ0ZTEtYjdjYy0zNjMxYTYxYzMxYmIiLCJuYmYiOjE1MDYyODQ4NzMsImV4cCI6NDY2MTk1ODQ3MywiaWF0IjoxNTA2Mjg0ODczLCJpc3MiOiJCbGVuZCIsImF1ZCI6IkJsZW5kIn0.QUh241IB7g3axLcfmKR2899Kt1xrTInwT6BBszf6aP4")
+                connection.connect("Bearer your_token")
             } catch (ex: Exception) {
                 runOnUiThread { Toast.makeText(this@MainActivity, ex.message, Toast.LENGTH_SHORT).show() }
             }
             connection.addListener(this@MainActivity)
             connection.subscribeToEvent("Send", this)
         }).start()
+```
+
+Invoke method
+
+```
+btnHello.setOnClickListener {
+            connection.invoke("Send", "Hello")
+        }
+```
+
+#### Java example
+
+```
+final HubConnection connection = new WebSocketHubConnection("http://192.168.0.104:5002/signalr/hubs/auth");
+```
+
+```
+new Thread(new Runnable() {
+            @Override
+            public void run() {
+                connection.connect("Bearer your_token");
+            }
+        }).start();
+```
+
+Invoke method
+
+```
+btnHello.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                connection.invoke("Send", "Hello");
+            }
+        });
 ```
