@@ -59,3 +59,7 @@ connection.invoke("Method", params...);
 ### Help
 
 If you get Multidex... error on compile, clean and rebuild project
+
+### Contribution and Issues
+
+I you want to participate in this project or have proposals, ideas or wishes, please create issue.
