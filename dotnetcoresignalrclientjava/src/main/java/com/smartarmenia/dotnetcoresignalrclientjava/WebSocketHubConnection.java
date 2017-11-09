@@ -103,7 +103,7 @@ public class WebSocketHubConnection implements HubConnection {
                 throw runtimeException;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            error(e);
         }
     }
 
@@ -119,7 +119,7 @@ public class WebSocketHubConnection implements HubConnection {
         try {
             client = new WebSocketClient(new URI(uri.toString()), new Draft_6455(), headers, 15000) {
                 @Override
-                public void onOpen(ServerHandshake handshakedata) {
+                public void onOpen(ServerHandshake handshakeData) {
                     Log.i(TAG, "Opened");
                     for (HubConnectionListener listener : listeners) {
                         listener.onConnected();

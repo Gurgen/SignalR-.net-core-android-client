@@ -14,11 +14,11 @@ Working .net core SignalR server.
 ### Installing
 
 ```
-implementation 'com.smartarmenia:dotnetcoresignalrclientjava:1.08'
+implementation 'com.smartarmenia:dotnetcoresignalrclientjava:1.09'
 ```
 or (for Android Studio 2.x)
 ```
-compile 'com.smartarmenia:dotnetcoresignalrclientjava:1.08'
+compile 'com.smartarmenia:dotnetcoresignalrclientjava:1.09'
 ```
 
 #### Kotlin example
@@ -27,9 +27,9 @@ private val connection: HubConnection = WebSocketHubConnection("http(https)://hu
 ```
 
 ```
-connection.connect()
 connection.addListener(listener)
 connection.subscribeToEvent(event, listener)
+connection.connect()
 ```
 
 Invoke method
@@ -45,9 +45,9 @@ final HubConnection connection = new WebSocketHubConnection("http(https)://hubad
 ```
 
 ```
-connection.connect();
 connection.addListener(listener);
 connection.subscribeToEvent(event, listener);
+connection.connect();
 ```
 
 Invoke method
