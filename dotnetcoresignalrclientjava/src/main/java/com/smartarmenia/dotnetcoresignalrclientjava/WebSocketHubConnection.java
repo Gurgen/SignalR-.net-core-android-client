@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.net.ssl.SSLSocketFactory;
+
 public class WebSocketHubConnection implements HubConnection {
     private static String SPECIAL_SYMBOL = "\u001E";
     private static String TAG = "WebSockets";
@@ -161,10 +163,13 @@ public class WebSocketHubConnection implements HubConnection {
                     error(ex);
                 }
             };
+
+            if (parsedUri.getScheme().equals("https")) {
+                client.setSocket(SSLSocketFactory.getDefault().createSocket());
+            }
         } catch (Exception e) {
             error(e);
         }
-
         Log.i(TAG, "Connecting...");
         client.connect();
     }
