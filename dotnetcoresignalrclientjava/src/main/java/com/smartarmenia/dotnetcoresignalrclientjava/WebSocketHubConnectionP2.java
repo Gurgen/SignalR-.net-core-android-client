@@ -26,13 +26,7 @@ import java.util.UUID;
 
 import javax.net.ssl.SSLSocketFactory;
 
-/**
- * This class for alpha version of server.
- *
- * @deprecated use {@link WebSocketHubConnectionP2} instead for preview2-final version.
- */
-@Deprecated
-public class WebSocketHubConnection implements HubConnection {
+public class WebSocketHubConnectionP2 implements HubConnection {
     private static String SPECIAL_SYMBOL = "\u001E";
     private static String TAG = "WebSockets";
 
@@ -40,15 +34,12 @@ public class WebSocketHubConnection implements HubConnection {
     private List<HubConnectionListener> listeners = new ArrayList<>();
     private Map<String, List<HubEventListener>> eventListeners = new HashMap<>();
     private Uri parsedUri;
-    private String hubUrl;
     private Gson gson = new Gson();
 
     private String connectionId = null;
     private String authHeader;
 
-    @Deprecated
-    public WebSocketHubConnection(String hubUrl, String authHeader) {
-        this.hubUrl = hubUrl;
+    public WebSocketHubConnectionP2(String hubUrl, String authHeader) {
         this.authHeader = authHeader;
         parsedUri = Uri.parse(hubUrl);
     }
@@ -81,23 +72,31 @@ public class WebSocketHubConnection implements HubConnection {
             throw new RuntimeException("URL must start with http or https");
 
         try {
-            HttpURLConnection connection = (HttpURLConnection) new URL(hubUrl).openConnection();
+            String negotiateUri = parsedUri.buildUpon().appendPath("negotiate").build().toString();
+            HttpURLConnection connection = (HttpURLConnection) new URL(negotiateUri).openConnection();
             if (authHeader != null && !authHeader.isEmpty()) {
                 connection.addRequestProperty("Authorization", authHeader);
             }
 
             connection.setConnectTimeout(15000);
             connection.setReadTimeout(15000);
-            connection.setRequestMethod("OPTIONS");
+            connection.setRequestMethod("POST");
             int responseCode = connection.getResponseCode();
 
             if (responseCode == 200) {
-                String result = InputStreamConverter.convert(connection.getInputStream());
+                String result = WebSocketHubConnectionP2.InputStreamConverter.convert(connection.getInputStream());
                 JsonElement jsonElement = gson.fromJson(result, JsonElement.class);
                 String connectionId = jsonElement.getAsJsonObject().get("connectionId").getAsString();
                 JsonElement availableTransportsElements = jsonElement.getAsJsonObject().get("availableTransports");
-                List<String> availableTransports = Arrays.asList(gson.fromJson(availableTransportsElements, String[].class));
-                if (!availableTransports.contains("WebSockets")) {
+                List<JsonElement> availableTransports = Arrays.asList(gson.fromJson(availableTransportsElements, JsonElement[].class));
+                boolean webSocketAvailable = false;
+                for (JsonElement element : availableTransports) {
+                    if (element.getAsJsonObject().get("transport").getAsString().equals("WebSockets")) {
+                        webSocketAvailable = true;
+                        break;
+                    }
+                }
+                if (!webSocketAvailable) {
                     throw new RuntimeException("The server does not support WebSockets transport");
                 }
                 this.connectionId = connectionId;
@@ -133,23 +132,26 @@ public class WebSocketHubConnection implements HubConnection {
                     for (HubConnectionListener listener : listeners) {
                         listener.onConnected();
                     }
-                    send("{\"protocol\":\"json\"}" + SPECIAL_SYMBOL);
+                    send("{\"protocol\":\"json\",\"version\":1}" + SPECIAL_SYMBOL);
                 }
 
                 @Override
                 public void onMessage(String message) {
                     Log.i(TAG, message);
-                    SignalRMessage element = gson.fromJson(message.replace(SPECIAL_SYMBOL, ""), SignalRMessage.class);
-                    if (element.getType() == 1) {
-                        HubMessage hubMessage = new HubMessage(element.getInvocationId(), element.getTarget(), element.getArguments());
-                        for (HubConnectionListener listener : listeners) {
-                            listener.onMessage(hubMessage);
-                        }
+                    String[] messages = message.split(SPECIAL_SYMBOL);
+                    for (String m : messages) {
+                        SignalRMessage element = gson.fromJson(m, SignalRMessage.class);
+                        if (element.getType() == 1) {
+                            HubMessage hubMessage = new HubMessage(element.getInvocationId(), element.getTarget(), element.getArguments());
+                            for (HubConnectionListener listener : listeners) {
+                                listener.onMessage(hubMessage);
+                            }
 
-                        List<HubEventListener> hubEventListeners = eventListeners.get(hubMessage.getTarget());
-                        if (hubEventListeners != null) {
-                            for (HubEventListener listener : hubEventListeners) {
-                                listener.onEventMessage(hubMessage);
+                            List<HubEventListener> hubEventListeners = eventListeners.get(hubMessage.getTarget());
+                            if (hubEventListeners != null) {
+                                for (HubEventListener listener : hubEventListeners) {
+                                    listener.onEventMessage(hubMessage);
+                                }
                             }
                         }
                     }
