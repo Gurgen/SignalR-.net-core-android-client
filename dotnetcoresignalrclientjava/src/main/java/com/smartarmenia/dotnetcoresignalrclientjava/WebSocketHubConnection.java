@@ -199,6 +199,11 @@ public class WebSocketHubConnection implements HubConnection {
     }
 
     @Override
+    public synchronized boolean isConnected() {
+        return client.isOpen();
+    }
+
+    @Override
     public void addListener(HubConnectionListener listener) {
         listeners.add(listener);
     }

@@ -5,6 +5,8 @@ public interface HubConnection {
 
     void disconnect();
 
+    boolean isConnected();
+
     void addListener(HubConnectionListener listener);
 
     void removeListener(HubConnectionListener listener);
