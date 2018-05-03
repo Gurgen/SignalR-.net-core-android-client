@@ -38,15 +38,10 @@ public class WebSocketHubConnectionP2 implements HubConnection {
 
     private String connectionId = null;
     private String authHeader;
-    private volatile boolean isConnected;
 
     public WebSocketHubConnectionP2(String hubUrl, String authHeader) {
         this.authHeader = authHeader;
         parsedUri = Uri.parse(hubUrl);
-    }
-
-    public boolean isConnected() {
-        return isConnected;
     }
 
     @Override
@@ -134,7 +129,6 @@ public class WebSocketHubConnectionP2 implements HubConnection {
                 @Override
                 public void onOpen(ServerHandshake handshakeData) {
                     Log.i(TAG, "Opened");
-                    isConnected = true;
                     for (HubConnectionListener listener : listeners) {
                         listener.onConnected();
                     }
@@ -166,7 +160,6 @@ public class WebSocketHubConnectionP2 implements HubConnection {
                 @Override
                 public void onClose(int code, String reason, boolean remote) {
                     Log.i(TAG, String.format("Closed. Code: %s, Reason: %s, Remote: %s", code, reason, remote));
-                    isConnected = false;
                     for (HubConnectionListener listener : listeners) {
                         listener.onDisconnected();
                     }
@@ -205,6 +198,11 @@ public class WebSocketHubConnectionP2 implements HubConnection {
             }
         };
         new Thread(runnable).start();
+    }
+
+    @Override
+    public synchronized boolean isConnected() {
+        return client.isOpen();
     }
 
     @Override
