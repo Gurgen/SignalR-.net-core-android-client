@@ -27,6 +27,9 @@ class WebSocketHubConnection(private val hubUrl: String) : HubConnection {
     private val eventListeners = mutableMapOf<String, MutableList<HubEventListener>>()
     private val parsedUri = Uri.parse(hubUrl)
     private val gson = Gson()
+    @Volatile
+    var isConnected = false
+        private set
 
     override fun connect(authHeader: String?) {
         Log.i(TAG, "Requesting connection id...")
@@ -65,6 +68,7 @@ class WebSocketHubConnection(private val hubUrl: String) : HubConnection {
         client = object : WebSocketClient(URI(uri.toString()), Draft_6455(), headers, 15000) {
             override fun onOpen(serverHandshake: ServerHandshake) {
                 Log.i(TAG, "Opened")
+                isConnected = true
                 listeners.forEach { it.onConnected() }
                 send("{\"protocol\":\"json\"}$SPECIAL_SYMBOL")
             }
@@ -81,6 +85,7 @@ class WebSocketHubConnection(private val hubUrl: String) : HubConnection {
 
             override fun onClose(i: Int, s: String, b: Boolean) {
                 Log.i(TAG, "Closed. Code: $i, Reason: $s, Remote: $b")
+                isConnected = false
                 listeners.forEach { it.onDisconnected() }
             }
 
