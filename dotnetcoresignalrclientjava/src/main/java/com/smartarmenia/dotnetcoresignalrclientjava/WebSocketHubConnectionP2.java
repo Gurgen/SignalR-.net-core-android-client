@@ -102,13 +102,9 @@ public class WebSocketHubConnectionP2 implements HubConnection {
                 this.connectionId = connectionId;
                 connectClient();
             } else if (responseCode == 401) {
-                RuntimeException runtimeException = new RuntimeException("Unauthorized request");
-                error(runtimeException);
-                throw runtimeException;
+                throw new RuntimeException("Unauthorized request");
             } else {
-                RuntimeException runtimeException = new RuntimeException("Server error");
-                error(runtimeException);
-                throw runtimeException;
+                throw new RuntimeException("Server error");
             }
         } catch (Exception e) {
             error(e);
