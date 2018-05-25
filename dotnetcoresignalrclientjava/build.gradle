@@ -8,8 +8,8 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 27
-        versionCode 13
-        versionName "1.12"
+        versionCode 14
+        versionName "1.13"
     }
 
     buildTypes {
@@ -23,7 +23,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'org.java-websocket:Java-WebSocket:1.3.4'
-    implementation 'com.google.code.gson:gson:2.8.2'
+    implementation 'com.google.code.gson:gson:2.8.4'
 }
 
 apply from: 'install.gradle'

@@ -14,11 +14,11 @@ Working .net core SignalR server.
 ### Installing
 
 ```
-implementation 'com.smartarmenia:dotnetcoresignalrclientjava:1.12'
+implementation 'com.smartarmenia:dotnetcoresignalrclientjava:1.13'
 ```
 or (for Android Studio 2.x)
 ```
-compile 'com.smartarmenia:dotnetcoresignalrclientjava:1.12'
+compile 'com.smartarmenia:dotnetcoresignalrclientjava:1.13'
 ```
 
 #### Kotlin example
