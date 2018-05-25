@@ -137,7 +137,8 @@ public class WebSocketHubConnectionP2 implements HubConnection {
                     String[] messages = message.split(SPECIAL_SYMBOL);
                     for (String m : messages) {
                         SignalRMessage element = gson.fromJson(m, SignalRMessage.class);
-                        if (element.getType() == 1) {
+                        Integer type = element.getType();
+                        if (type != null && type == 1) {
                             HubMessage hubMessage = new HubMessage(element.getInvocationId(), element.getTarget(), element.getArguments());
                             for (HubConnectionListener listener : listeners) {
                                 listener.onMessage(hubMessage);
@@ -258,13 +259,15 @@ public class WebSocketHubConnectionP2 implements HubConnection {
     }
 
     private static class InputStreamConverter {
+        private static char RETURN_SYMBOL = '\n';
+
         static String convert(InputStream stream) throws IOException {
             BufferedReader r = new BufferedReader(new InputStreamReader(stream));
             StringBuilder total = new StringBuilder();
             String line;
             while ((line = r.readLine()) != null) {
                 total.append(line);
-                total.append('\n');
+                total.append(RETURN_SYMBOL);
             }
 
             return total.toString();
