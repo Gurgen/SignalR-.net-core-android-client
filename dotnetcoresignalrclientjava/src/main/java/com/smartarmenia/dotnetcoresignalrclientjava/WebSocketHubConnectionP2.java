@@ -38,10 +38,12 @@ public class WebSocketHubConnectionP2 implements HubConnection {
 
     private String connectionId = null;
     private String authHeader;
+    private boolean skipConnectionId;
 
-    public WebSocketHubConnectionP2(String hubUrl, String authHeader) {
+    public WebSocketHubConnectionP2(String hubUrl, String authHeader, boolean skipGettingConnectionId) {
         this.authHeader = authHeader;
         parsedUri = Uri.parse(hubUrl);
+        skipConnectionId = skipGettingConnectionId;
     }
 
     @Override
@@ -50,7 +52,7 @@ public class WebSocketHubConnectionP2 implements HubConnection {
             return;
 
         Runnable runnable;
-        if (connectionId == null) {
+        if (connectionId == null && !skipConnectionId) {
             runnable = new Runnable() {
                 public void run() {
                     getConnectionId();
@@ -113,7 +115,9 @@ public class WebSocketHubConnectionP2 implements HubConnection {
 
     private void connectClient() {
         Uri.Builder uriBuilder = parsedUri.buildUpon();
-        uriBuilder.appendQueryParameter("id", connectionId);
+        if (!skipConnectionId) {
+            uriBuilder.appendQueryParameter("id", connectionId);
+        }
         uriBuilder.scheme(parsedUri.getScheme().replace("http", "ws"));
         Uri uri = uriBuilder.build();
         Map<String, String> headers = new HashMap<>();
