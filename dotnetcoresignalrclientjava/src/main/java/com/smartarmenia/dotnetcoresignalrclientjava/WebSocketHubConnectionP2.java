@@ -199,6 +199,9 @@ public class WebSocketHubConnectionP2 implements HubConnection {
 
     @Override
     public synchronized boolean isConnected() {
+        if (client == null)
+            return false;
+
         return client.isOpen();
     }
 
