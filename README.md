@@ -73,3 +73,6 @@ If you get Multidex... error on compile, clean and rebuild project
 ### Contribution and Issues
 
 If you want to participate in this project or have proposals, ideas or wishes, please create issue.
+
+
+Testing commit
